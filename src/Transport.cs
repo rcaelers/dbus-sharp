@@ -15,6 +15,7 @@ namespace DBus.Transports
 		{
 			switch (entry.Method) {
 				case "tcp":
+				case "nonce-tcp":
 				{
 					Transport transport = new SocketTransport ();
 					transport.Open (entry);

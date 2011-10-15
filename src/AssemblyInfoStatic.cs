@@ -26,4 +26,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo ("dbus-daemon")]
 [assembly: InternalsVisibleTo ("dbus-sharp-glib")]
 [assembly: InternalsVisibleTo ("dbus-sharp-proxies")]
+[assembly: InternalsVisibleTo ("DBus.Proxies")]
 #endif

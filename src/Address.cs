@@ -5,6 +5,7 @@
 using System;
 using System.Text;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace DBus
 {
@@ -25,6 +26,29 @@ namespace DBus
 
 	static class Address
 	{
+		enum FileRights : uint          // constants from winbase.h
+		{
+			Read = 4,
+			Write = 2,
+			ReadWrite = Read + Write
+		}
+
+		[DllImport ("kernel32.dll", SetLastError = true)]
+		static extern IntPtr OpenFileMapping (FileRights dwDesiredAccess,
+						      bool bInheritHandle,
+						      string lpName);
+		[DllImport ("kernel32.dll", SetLastError = true)]
+		static extern IntPtr MapViewOfFile (IntPtr hFileMappingObject,
+						    FileRights dwDesiredAccess,
+						    uint dwFileOffsetHigh,
+						    uint dwFileOffsetLow,
+						    uint dwNumberOfBytesToMap);
+		[DllImport ("Kernel32.dll")]
+		static extern bool UnmapViewOfFile (IntPtr map);
+
+		[DllImport ("kernel32.dll")]
+        static extern int CloseHandle (IntPtr hObject);
+
 		//(unix:(path|abstract)=.*,guid=.*|tcp:host=.*(,port=.*)?);? ...
 		public static AddressEntry[] Parse (string addresses)
 		{
@@ -55,7 +79,23 @@ namespace DBus
 		public static string Session
 		{
 			get {
-				return Environment.GetEnvironmentVariable ("DBUS_SESSION_BUS_ADDRESS");
+				string addr = Environment.GetEnvironmentVariable ("DBUS_SESSION_BUS_ADDRESS");
+				if (String.IsNullOrEmpty (addr) &&
+				    (Environment.OSVersion.Platform == PlatformID.Win32Windows ||
+				     Environment.OSVersion.Platform == PlatformID.Win32NT ||
+				     Environment.OSVersion.Platform == PlatformID.WinCE)) {
+					IntPtr mapping = OpenFileMapping (FileRights.Read, false, "DBusDaemonAddressInfo");
+					if (mapping != IntPtr.Zero) {
+						IntPtr p = MapViewOfFile (mapping, FileRights.Read, 0, 0, 0);
+						if (p != IntPtr.Zero) {
+							addr = Marshal.PtrToStringAnsi (p);
+							UnmapViewOfFile (p);
+						}
+						CloseHandle (mapping);
+					}
+				}
+				return addr;
+				    
 			}
 		}
 
