@@ -3,8 +3,10 @@
 *.mdb
 *.suo
 *.pidb
+*.pdb
 *.user
 *.userprefs
+*~
 bin/
 obj/
 dbus-sharp-1.0.pc
